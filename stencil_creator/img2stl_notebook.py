@@ -32,8 +32,33 @@ plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)[y1:y2,x1:x2])
 plt.show()
 
 # %%
+from PIL import Image
+from scipy.ndimage import gaussian_filter, zoom
 from stl_tools import numpy2stl
+import cv2
+import numpy as np
 
-numpy2stl(img, "example.stl", scale=0.05, mask_val=5., solid=True)
+image_name = 'web.jpg'
+zoom_factor = 0.3
+
+A = np.array(Image.open(image_name).convert('LA'))
+A = A[:,:,0]
+
+kernel = np.ones((5,5),np.uint8)
+A = cv2.morphologyEx(A, cv2.MORPH_OPEN, kernel)
+
+A = cv2.GaussianBlur(A, (15, 15), 1.0)
+ret,A = cv2.threshold(A,127,255,cv2.THRESH_BINARY)
+
+A = zoom(A, zoom_factor)
+A = 10*(A / A.max())
+
+# %%
+edges = cv2.Canny(np.uint8(A),1,9)
+edges = 8*(edges / edges.max())
+
+B = A-edges
+B = np.clip(B, 0, 10)
+numpy2stl(B, "web.stl", scale=1, mask_val=1, solid=True)
 
 # %%
